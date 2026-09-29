@@ -16,6 +16,7 @@ export type Task = {
   title: string
   description: string | null
   status: 'todo' | 'in_progress' | 'done'
+  due_date: string | null
   created_at: string
   updated_at: string
 }

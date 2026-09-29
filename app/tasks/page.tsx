@@ -27,6 +27,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -61,7 +62,7 @@ export default function TasksPage() {
 
     const { data, error } = await supabase
       .from('tasks')
-      .insert({ title, description, user_id: user.id })
+      .insert({ title, description, due_date: dueDate || null, user_id: user.id })
       .select()
       .single()
 
@@ -71,6 +72,7 @@ export default function TasksPage() {
       setTasks((prev) => [data, ...prev])
       setTitle('')
       setDescription('')
+      setDueDate('')
     }
     setSubmitting(false)
   }
@@ -89,7 +91,7 @@ export default function TasksPage() {
 
   async function handleEditSave(
     id: string,
-    updates: { title: string; description: string }
+    updates: { title: string; description: string; due_date: string | null }
   ) {
     const previousTasks = tasks
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)))
@@ -213,6 +215,12 @@ export default function TasksPage() {
             className="w-full border border-[var(--border)] rounded-sm px-3 py-2 text-sm bg-transparent focus:outline-none focus:border-[var(--ink-soft)] placeholder:text-[var(--ink-soft)]"
             rows={2}
           />
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="border border-[var(--border)] rounded-sm px-3 py-2 text-sm bg-transparent focus:outline-none focus:border-[var(--ink-soft)] text-[var(--ink-soft)]"
+          />
           <button
             type="submit"
             disabled={submitting}
@@ -294,6 +302,24 @@ export default function TasksPage() {
                                     {task.description}
                                   </p>
                                 )}
+                                {task.due_date && (() => {
+                                  const overdue =
+                                    task.status !== 'done' &&
+                                    task.due_date < new Date().toISOString().split('T')[0]
+                                  return (
+                                    <p
+                                      className={`text-xs mt-1 ${
+                                        overdue ? 'text-red-600' : 'text-[var(--ink-soft)]'
+                                      }`}
+                                    >
+                                      {overdue ? 'Overdue: ' : 'Due '}
+                                      {new Date(task.due_date + 'T00:00:00').toLocaleDateString(
+                                        'en-US',
+                                        { month: 'short', day: 'numeric' }
+                                      )}
+                                    </p>
+                                  )
+                                })()}
                                 {NEXT_STATUS[task.status] && (
                                   <button
                                     onClick={(e) => {
